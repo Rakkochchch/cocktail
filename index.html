@@ -1,773 +1,593 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-    <head>
-        <meta charset="utf-8" />
-        <meta
-            name="viewport"
-            content="width=device-width,initial-scale=1,viewport-fit=cover"
-        />
-        <title>カクテル組み合わせ問題（スマホ最適）</title>
-        <style>
-            :root{
-  /* Digital庁風：白基調＋青アクセント */
-  --bg:#f6f8fb;
-  --surface:#ffffff;
-  --surface2:#f2f6ff;
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>カクテル組み合わせ問題（デジタル庁風）</title>
 
-  --text:#0b1f33;
-  --muted:#4a6076;
+  <!-- Fonts: Digital庁デザインシステムで採用されている Noto Sans JP / Noto Sans Mono を使用 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&family=Noto+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-  --accent:#0b57d0;        /* 代表的な行政サイト系の青 */
-  --accent-weak:#e8f0ff;
+  <style>
+    :root{
+      /* Digital庁風：白基調＋青アクセント（雰囲気寄せ） */
+      --bg:#f6f8fb;
+      --surface:#ffffff;
+      --surface2:#f2f6ff;
 
-  --ok:#0f7b3b;
-  --ng:#c62828;
+      --text:#0b1f33;
+      --muted:#4a6076;
 
-  --line: rgba(11,31,51,.14);
+      --accent:#0b57d0;
+      --accent-weak:#e8f0ff;
 
-  --radius:12px;
-  --shadow: 0 10px 24px rgba(11,31,51,.08);
+      --ok:#0f7b3b;
+      --ng:#c62828;
+
+      --line: rgba(11,31,51,.14);
+      --radius:12px;
+      --shadow: 0 10px 24px rgba(11,31,51,.08);
+
+      --font-sans: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      --font-mono: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--font-sans);
+      background:var(--bg);
+      color:var(--text);
+      line-height: 1.6; /* 本文は1.5以上推奨の考え方に寄せる */
+    }
+    button, select, input, textarea{ font-family: var(--font-sans); }
+    code, pre, kbd, samp{ font-family: var(--font-mono); }
+
+    header{
+      position:sticky; top:0; z-index:10;
+      padding:14px 14px 10px;
+      border-bottom:1px solid var(--line);
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(8px);
+    }
+    h1{
+      margin:0 0 10px;
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:.01em;
+      line-height: 1.4;
+    }
+
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .controlRow{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%; }
+    @media(min-width:720px){ .controlRow{ grid-template-columns: 1fr 1fr 1fr 1fr; } }
+
+    select{
+      width:100%;
+      background:var(--surface);
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:12px 12px;
+      font-size:15px;
+      font-weight:700;
+      line-height:1.0;
+    }
+
+    main{
+      max-width:860px;
+      margin:0 auto;
+      padding:14px;
+      padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    }
+
+    .card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+
+    .meta{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      background: var(--accent-weak);
+      border:1px solid rgba(11,87,208,.18);
+      font-size:13px;
+      color:#23415f;
+      font-weight:700;
+      line-height:1.0;
+    }
+
+    .q{
+      font-size:18px;
+      line-height:1.5;
+      margin:12px 0 6px;
+      font-weight:800;
+      letter-spacing: .01em;
+    }
+    .hint{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .choices{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .choice{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding:14px 14px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: var(--surface);
+      cursor:pointer;
+      user-select:none;
+      min-height:56px;
+    }
+    .choice:active{ transform: scale(.995); }
+
+    .choice .label{ flex:1; }
+    .choice .title{ font-size:16px; font-weight:800; line-height:1.4; }
+    .choice .sub{ font-size:12px; color:var(--muted); margin-top:2px; font-weight:700; }
+
+    .choice input{
+      width:1px; height:1px;
+      opacity:0;
+      position:absolute;
+      pointer-events:none;
+    }
+
+    .mark{
+      width:26px; height:26px;
+      border-radius:8px;
+      border:2px solid rgba(11,31,51,.25);
+      display:grid;
+      place-items:center;
+      flex:0 0 26px;
+      background: #fff;
+    }
+    .choice[data-type="radio"] .mark{ border-radius:999px; }
+
+    .mark::after{
+      content:"";
+      width:12px; height:12px;
+      border-radius:4px;
+      transform: scale(0);
+      background: var(--accent);
+      transition: transform .12s ease;
+    }
+    .choice[data-type="radio"] .mark::after{
+      border-radius:999px;
+      width:12px; height:12px;
+    }
+
+    .choice.selected{
+      border-color: rgba(11,87,208,.45);
+      background: var(--accent-weak);
+    }
+    .choice.selected .mark{
+      border-color: rgba(11,87,208,.65);
+    }
+    .choice.selected .mark::after{ transform: scale(1); }
+
+    .result{
+      margin-top:12px;
+      border-radius: 12px;
+      padding:12px 12px;
+      border:1px solid var(--line);
+      display:none;
+      background: var(--surface2);
+    }
+    .result.ok{
+      display:block;
+      border-color: rgba(15,123,59,.35);
+      background: rgba(15,123,59,.08);
+    }
+    .result.ng{
+      display:block;
+      border-color: rgba(198,40,40,.35);
+      background: rgba(198,40,40,.08);
+    }
+    .result .big{ font-size:16px; font-weight:900; margin-bottom:4px; line-height:1.4; }
+    .result .small{ font-size:13px; color:var(--muted); font-weight:700; line-height:1.6; }
+
+    .actions{
+      position:fixed; left:0; right:0; bottom:0; z-index:20;
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(246,248,251,.92);
+      backdrop-filter: blur(8px);
+      border-top:1px solid var(--line);
+    }
+    .actions .bar{
+      max-width:860px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+
+    button{
+      width:100%;
+      padding:14px 12px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      font-size:15px;
+      font-weight:900;
+      cursor:pointer;
+      line-height:1.0;
+    }
+    button.primary{
+      background: var(--accent);
+      color:#fff;
+      border-color: rgba(11,87,208,.55);
+    }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
+
+    details{
+      margin-top:12px;
+      border-radius: var(--radius);
+      overflow:hidden;
+      border:1px solid var(--line);
+      background: #fff;
+    }
+    summary{
+      padding:12px 14px;
+      cursor:pointer;
+      font-weight:900;
+      list-style:none;
+      background: var(--surface2);
+    }
+    summary::-webkit-details-marker{ display:none; }
+    .detailsBody{
+      padding:0 14px 14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.75;
+      font-weight:700;
+    }
+    .sep{ height:1px; background: rgba(11,31,51,.10); margin:10px 0; }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>カクテル組み合わせ問題（選択式・スマホ対応）</h1>
+  <div class="controls">
+    <div class="controlRow">
+      <select id="mode" aria-label="モード">
+        <option value="nameToIng">カクテル名 → 材料（複数選択）</option>
+        <option value="ingToName">材料 → カクテル名（4択）</option>
+      </select>
+
+      <select id="difficulty" aria-label="難易度">
+        <option value="normal">通常</option>
+        <option value="easy">易しめ</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="meta">PDF掲載のカクテル「材料 + 材料」表記を元にしたクイズです。</div>
+
+    <div class="topbar">
+      <div class="pill">スコア：<span id="score">0</span> / <span id="total">0</span></div>
+      <div class="pill">問題ID：<span id="qid">-</span></div>
+    </div>
+
+    <div class="q" id="question">下の「新しい問題」を押してください</div>
+    <div class="hint" id="hint"></div>
+
+    <div class="choices" id="choices"></div>
+
+    <div id="result" class="result"></div>
+
+    <details>
+      <summary>収録データを見る（折りたたみ）</summary>
+      <div class="detailsBody">
+        <div><b>収録カクテル</b></div>
+        <div id="list"></div>
+        <div class="sep"></div>
+        <div><b>材料一覧</b></div>
+        <div id="ings"></div>
+      </div>
+    </details>
+  </section>
+</main>
+
+<div class="actions">
+  <div class="bar">
+    <button class="primary" id="newQ">新しい問題</button>
+    <button id="check">判定</button>
+    <button id="reveal">答え</button>
+  </div>
+</div>
+
+<script>
+/* PDFのカクテル記載（材料 + 材料）を元にしたデータ */
+const COCKTAILS = [
+  { name:"ジントニック", ingredients:["ジン","トニックウォーター"] },
+  { name:"ジンバック", ingredients:["ジン","ジンジャーエール"] },
+
+  { name:"カシスソーダ", ingredients:["カシスリキュール","ソーダ"] },
+  { name:"カシスウーロン", ingredients:["カシスリキュール","ウーロン茶"] },
+  { name:"カシスオレンジ", ingredients:["カシスリキュール","オレンジジュース"] },
+  { name:"カシスグレープフルーツ", ingredients:["カシスリキュール","グレープフルーツジュース"] },
+
+  { name:"モスコーミュール", ingredients:["ウォッカ","ジンジャーエール"] },
+  { name:"ブラックルシアン", ingredients:["ウォッカ","コーヒーリキュール"] },
+  { name:"スクリュードライバー", ingredients:["ウォッカ","オレンジジュース"] },
+  { name:"ブラッディメアリー", ingredients:["ウォッカ","トマトジュース"] },
+
+  { name:"ファジーネーブル", ingredients:["ピーチリキュール","オレンジジュース"] },
+  { name:"ペシェウーロン", ingredients:["ピーチリキュール","ウーロン茶"] },
+
+  { name:"カンパリソーダ", ingredients:["カンパリ","ソーダ"] },
+  { name:"カンパリオレンジ", ingredients:["カンパリ","オレンジジュース"] },
+  /* PDF表記に合わせて「グレープフルーツ」表現をそのまま保持 */
+  { name:"スプモーニ", ingredients:["カンパリ","オレンジジュース","グレープフルーツ","トニックウォーター"] },
+
+  { name:"シャンディガフ", ingredients:["ビール","ジンジャーエール"] },
+  { name:"レッドアイ", ingredients:["ビール","トマトジュース"] },
+  { name:"カシスビア", ingredients:["ビール","カシスリキュール"] },
+
+  { name:"キール", ingredients:["白ワイン","カシスリキュール"] },
+  { name:"スプリッツァー", ingredients:["白ワイン","ソーダ"] },
+  { name:"キールロワイヤル", ingredients:["スパークリングワイン","カシスリキュール"] },
+  { name:"ミモザ", ingredients:["スパークリングワイン","オレンジジュース"] },
+
+  { name:"カルーアミルク", ingredients:["コーヒーリキュール","ミルク"] },
+  { name:"チャイナブルー", ingredients:["ライチリキュール","グレープフルーツジュース","トニックウォーター"] },
+  { name:"照葉樹林", ingredients:["グリーンティーリキュール","ウーロン茶"] },
+];
+
+const modeEl = document.getElementById("mode");
+const diffEl = document.getElementById("difficulty");
+const questionEl = document.getElementById("question");
+const hintEl = document.getElementById("hint");
+const choicesEl = document.getElementById("choices");
+const resultEl = document.getElementById("result");
+const scoreEl = document.getElementById("score");
+const totalEl = document.getElementById("total");
+const qidEl = document.getElementById("qid");
+const listEl = document.getElementById("list");
+const ingsEl = document.getElementById("ings");
+
+const allIngredients = Array.from(new Set(COCKTAILS.flatMap(c => c.ingredients))).sort((a,b)=>a.localeCompare(b,"ja"));
+listEl.textContent = COCKTAILS.map(c => c.name).join("、");
+ingsEl.textContent = allIngredients.join("、");
+
+let state = { current: null, score: 0, total: 0, locked: false };
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
 }
 
-*{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-html, body{ height:100%; }
-body{
-  margin:0;
-  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-  background:var(--bg);
-  color:var(--text);
+function pickCocktail(){
+  if(diffEl.value === "easy"){
+    const weighted = [];
+    for(const c of COCKTAILS){
+      const w = Math.max(1, 5 - c.ingredients.length);
+      for(let i=0;i<w;i++) weighted.push(c);
+    }
+    return weighted[Math.floor(Math.random()*weighted.length)];
+  }
+  return COCKTAILS[Math.floor(Math.random()*COCKTAILS.length)];
 }
 
-/* header */
-header{
-  position:sticky; top:0; z-index:10;
-  padding:14px 14px 10px;
-  border-bottom:1px solid var(--line);
-  background:rgba(255,255,255,.92);
-  backdrop-filter: blur(8px);
-}
-h1{
-  margin:0 0 10px;
-  font-size:16px;
-  letter-spacing:.01em;
+function clearResult(){
+  resultEl.className = "result";
+  resultEl.style.display = "none";
+  resultEl.innerHTML = "";
 }
 
-/* selects */
-.controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-.controlRow{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%; }
-@media(min-width:720px){ .controlRow{ grid-template-columns: 1fr 1fr 1fr 1fr; } }
-
-select{
-  width:100%;
-  background:var(--surface);
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:12px 12px;
-  font-size:15px;
+function setResult(ok, title, detail){
+  resultEl.style.display = "block";
+  resultEl.className = "result " + (ok ? "ok" : "ng");
+  resultEl.innerHTML = `<div class="big">${title}</div><div class="small">${detail}</div>`;
 }
 
-/* layout */
-main{
-  max-width:860px;
-  margin:0 auto;
-  padding:14px;
-  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+function lockInputs(){
+  state.locked = true;
+  choicesEl.querySelectorAll(".choice").forEach(c => c.style.pointerEvents = "none");
 }
 
-.card{
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius: var(--radius);
-  padding:14px;
-  box-shadow: var(--shadow);
+function buildChoiceCard({type, text, name, value}){
+  const card = document.createElement("div");
+  card.className = "choice";
+  card.dataset.type = type;
+  card.dataset.value = value;
+  card.setAttribute("role", type === "radio" ? "radio" : "checkbox");
+  card.setAttribute("aria-checked", "false");
+
+  const input = document.createElement("input");
+  input.type = type;
+  input.name = name;
+  input.value = value;
+
+  const mark = document.createElement("div");
+  mark.className = "mark";
+
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerHTML = `<div class="title">${text}</div><div class="sub">${type === "radio" ? "カクテル名" : "材料"}</div>`;
+
+  card.appendChild(input);
+  card.appendChild(mark);
+  card.appendChild(label);
+
+  card.addEventListener("click", () => {
+    if(state.locked) return;
+
+    if(type === "radio"){
+      choicesEl.querySelectorAll(".choice").forEach(el => {
+        el.classList.remove("selected");
+        el.setAttribute("aria-checked","false");
+        const inp = el.querySelector("input");
+        inp.checked = false;
+      });
+      card.classList.add("selected");
+      card.setAttribute("aria-checked","true");
+      input.checked = true;
+    }else{
+      const next = !input.checked;
+      input.checked = next;
+      card.classList.toggle("selected", next);
+      card.setAttribute("aria-checked", next ? "true":"false");
+    }
+  });
+
+  return card;
 }
 
-.meta{
-  color:var(--muted);
-  font-size:13px;
-  line-height:1.6;
+function renderQuestion(){
+  state.locked = false;
+  clearResult();
+
+  const cocktail = pickCocktail();
+  const qid = Math.random().toString(16).slice(2,8);
+  qidEl.textContent = qid;
+
+  const mode = modeEl.value;
+
+  if(mode === "nameToIng"){
+    const correct = new Set(cocktail.ingredients);
+    const wrongPool = allIngredients.filter(x => !correct.has(x));
+    const wrongCount = Math.min(6, wrongPool.length);
+    const options = shuffle([...cocktail.ingredients, ...shuffle(wrongPool).slice(0, wrongCount)]);
+
+    state.current = { type:"nameToIng", cocktail, correctSet: correct, options };
+
+    questionEl.textContent = `「${cocktail.name}」の材料を選びなさい`;
+    hintEl.textContent = "複数選択OK。正しい材料を全部選んで「判定」。";
+
+    choicesEl.innerHTML = "";
+    options.forEach(opt => {
+      choicesEl.appendChild(buildChoiceCard({type:"checkbox", text: opt, name:"ing", value: opt}));
+    });
+
+  }else{
+    const ingText = shuffle(cocktail.ingredients).join(" + ");
+    const correctName = cocktail.name;
+    const wrongNames = shuffle(COCKTAILS.filter(c => c.name !== correctName).map(c => c.name)).slice(0,3);
+    const options = shuffle([correctName, ...wrongNames]);
+
+    state.current = { type:"ingToName", cocktail, ingText, correctName, options };
+
+    questionEl.textContent = `材料「${ingText}」のカクテル名を選びなさい`;
+    hintEl.textContent = "1つ選択して「判定」。";
+
+    choicesEl.innerHTML = "";
+    options.forEach(opt => {
+      choicesEl.appendChild(buildChoiceCard({type:"radio", text: opt, name:"name", value: opt}));
+    });
+  }
 }
 
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-top:10px;
-  flex-wrap:wrap;
+function getSelected(){
+  if(!state.current) return [];
+  if(state.current.type === "nameToIng"){
+    return Array.from(document.querySelectorAll('input[name="ing"]:checked')).map(x=>x.value);
+  }
+  const r = document.querySelector('input[name="name"]:checked');
+  return r ? [r.value] : [];
 }
 
-.pill{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:8px 10px;
-  border-radius:999px;
-  background: var(--accent-weak);
-  border:1px solid rgba(11,87,208,.18);
-  font-size:13px;
-  color:#23415f;
+function checkAnswer(){
+  if(!state.current || state.locked) return;
+
+  const selected = getSelected();
+  if(selected.length === 0){
+    setResult(false, "未選択です", "どれか選んでから判定してください。");
+    return;
+  }
+
+  state.total += 1;
+  totalEl.textContent = state.total;
+
+  if(state.current.type === "nameToIng"){
+    const correct = state.current.correctSet;
+    const selSet = new Set(selected);
+    let ok = true;
+
+    for(const c of correct){ if(!selSet.has(c)) ok = false; }
+    for(const s of selSet){ if(!correct.has(s)) ok = false; }
+
+    if(ok){
+      state.score += 1;
+      scoreEl.textContent = state.score;
+      setResult(true, "正解！", "選んだ材料がすべて一致しました。");
+    }else{
+      setResult(false, "不正解", `正解：${state.current.cocktail.ingredients.join(" + ")}`);
+    }
+    lockInputs();
+  }else{
+    const ans = state.current.correctName;
+    const ok = (selected[0] === ans);
+    if(ok){
+      state.score += 1;
+      scoreEl.textContent = state.score;
+      setResult(true, "正解！", "その組み合わせのカクテル名で合っています。");
+    }else{
+      setResult(false, "不正解", `正解：${ans}`);
+    }
+    lockInputs();
+  }
 }
 
-.q{
-  font-size:18px;
-  line-height:1.45;
-  margin:12px 0 6px;
-}
-.hint{
-  color:var(--muted);
-  font-size:13px;
-  margin-bottom:10px;
+function revealAnswer(){
+  if(!state.current) return;
+  if(state.current.type === "nameToIng"){
+    setResult(true, "答え", `${state.current.cocktail.name} = ${state.current.cocktail.ingredients.join(" + ")}`);
+  }else{
+    setResult(true, "答え", `${state.current.ingText} = ${state.current.correctName}`);
+  }
 }
 
-/* choices */
-.choices{
-  display:grid;
-  gap:10px;
-  margin-top:10px;
-}
-
-.choice{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  padding:14px 14px;
-  border-radius: 12px;
-  border:1px solid var(--line);
-  background: var(--surface);
-  cursor:pointer;
-  user-select:none;
-  min-height:56px;
-}
-
-.choice:active{ transform: scale(.995); }
-
-.choice .label{ flex:1; }
-.choice .title{ font-size:16px; font-weight:700; }
-.choice .sub{ font-size:12px; color:var(--muted); margin-top:2px; }
-
-.choice input{
-  width:1px; height:1px;
-  opacity:0;
-  position:absolute;
-  pointer-events:none;
-}
-
-.mark{
-  width:26px; height:26px;
-  border-radius:8px;
-  border:2px solid rgba(11,31,51,.25);
-  display:grid;
-  place-items:center;
-  flex:0 0 26px;
-  background: #fff;
-}
-.choice[data-type="radio"] .mark{ border-radius:999px; }
-
-.mark::after{
-  content:"";
-  width:12px; height:12px;
-  border-radius:4px;
-  transform: scale(0);
-  background: var(--accent);
-  transition: transform .12s ease;
-}
-.choice[data-type="radio"] .mark::after{
-  border-radius:999px;
-  width:12px; height:12px;
-}
-
-.choice.selected{
-  border-color: rgba(11,87,208,.45);
-  background: var(--accent-weak);
-}
-.choice.selected .mark{
-  border-color: rgba(11,87,208,.65);
-}
-.choice.selected .mark::after{ transform: scale(1); }
-
-/* result */
-.result{
-  margin-top:12px;
-  border-radius: 12px;
-  padding:12px 12px;
-  border:1px solid var(--line);
-  display:none;
-  background: var(--surface2);
-}
-.result.ok{
-  display:block;
-  border-color: rgba(15,123,59,.35);
-  background: rgba(15,123,59,.08);
-}
-.result.ng{
-  display:block;
-  border-color: rgba(198,40,40,.35);
-  background: rgba(198,40,40,.08);
-}
-.result .big{ font-size:16px; font-weight:800; margin-bottom:4px; }
-.result .small{ font-size:13px; color:var(--muted); }
-
-/* bottom action bar */
-.actions{
-  position:fixed; left:0; right:0; bottom:0; z-index:20;
-  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: rgba(246,248,251,.92);
-  backdrop-filter: blur(8px);
-  border-top:1px solid var(--line);
-}
-.actions .bar{
-  max-width:860px;
-  margin:0 auto;
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap:10px;
-}
-
-button{
-  width:100%;
-  padding:14px 12px;
-  border-radius: 12px;
-  border:1px solid var(--line);
-  background: var(--surface);
-  color: var(--text);
-  font-size:15px;
-  font-weight:800;
-  cursor:pointer;
-}
-
-button.primary{
-  background: var(--accent);
-  color:#fff;
-  border-color: rgba(11,87,208,.55);
-}
-
-button:disabled{ opacity:.55; cursor:not-allowed; }
-
-/* collapsible info */
-details{
-  margin-top:12px;
-  border-radius: var(--radius);
-  overflow:hidden;
-  border:1px solid var(--line);
-  background: #fff;
-}
-summary{
-  padding:12px 14px;
-  cursor:pointer;
-  font-weight:800;
-  list-style:none;
-  background: var(--surface2);
-}
-summary::-webkit-details-marker{ display:none; }
-.detailsBody{
-  padding:0 14px 14px;
-  color:var(--muted);
-  font-size:13px;
-  line-height:1.65;
-}
-.sep{ height:1px; background: rgba(11,31,51,.10); margin:10px 0; }
-
-        </style>
-    </head>
-    <body>
-        <header>
-            <h1>カクテル組み合わせ問題（スマホ最適・選択式）</h1>
-            <div class="controls">
-                <div class="controlRow">
-                    <select id="mode" aria-label="モード">
-                        <option value="nameToIng">
-                            カクテル名 → 材料（複数選択）
-                        </option>
-                        <option value="ingToName">
-                            材料 → カクテル名（4択）
-                        </option>
-                    </select>
-                    <select id="difficulty" aria-label="難易度">
-                        <option value="normal">通常</option>
-                        <option value="easy">易しめ</option>
-                    </select>
-                </div>
-            </div>
-        </header>
-
-        <main>
-            <section class="card">
-                <div class="meta">
-                    PDF掲載のカクテル「材料 + 材料」表記を元にしたクイズです。
-                </div>
-                <div class="topbar">
-                    <div class="pill">
-                        スコア：<span id="score">0</span> /
-                        <span id="total">0</span>
-                    </div>
-                    <div class="pill">問題ID：<span id="qid">-</span></div>
-                </div>
-
-                <div class="q" id="question">
-                    下の「新しい問題」を押してください
-                </div>
-                <div class="hint" id="hint"></div>
-
-                <div class="choices" id="choices"></div>
-
-                <div id="result" class="result"></div>
-
-                <details>
-                    <summary>収録データを見る（折りたたみ）</summary>
-                    <div class="detailsBody">
-                        <div><b>収録カクテル</b></div>
-                        <div id="list"></div>
-                        <div class="sep"></div>
-                        <div><b>材料一覧</b></div>
-                        <div id="ings"></div>
-                    </div>
-                </details>
-            </section>
-        </main>
-
-        <div class="actions">
-            <div class="bar">
-                <button class="primary" id="newQ">新しい問題</button>
-                <button id="check">判定</button>
-                <button id="reveal">答え</button>
-            </div>
-        </div>
-
-        <script>
-            /* PDFのカクテル記載（材料 + 材料）を元にしたデータ */
-            const COCKTAILS = [
-                {
-                    name: "ジントニック",
-                    ingredients: ["ジン", "トニックウォーター"],
-                },
-                {
-                    name: "ジンバック",
-                    ingredients: ["ジン", "ジンジャーエール"],
-                },
-
-                {
-                    name: "カシスソーダ",
-                    ingredients: ["カシスリキュール", "ソーダ"],
-                },
-                {
-                    name: "カシスウーロン",
-                    ingredients: ["カシスリキュール", "ウーロン茶"],
-                },
-                {
-                    name: "カシスオレンジ",
-                    ingredients: ["カシスリキュール", "オレンジジュース"],
-                },
-                {
-                    name: "カシスグレープフルーツ",
-                    ingredients: [
-                        "カシスリキュール",
-                        "グレープフルーツジュース",
-                    ],
-                },
-
-                {
-                    name: "モスコーミュール",
-                    ingredients: ["ウォッカ", "ジンジャーエール"],
-                },
-                {
-                    name: "ブラックルシアン",
-                    ingredients: ["ウォッカ", "コーヒーリキュール"],
-                },
-                {
-                    name: "スクリュードライバー",
-                    ingredients: ["ウォッカ", "オレンジジュース"],
-                },
-                {
-                    name: "ブラッディメアリー",
-                    ingredients: ["ウォッカ", "トマトジュース"],
-                },
-
-                {
-                    name: "ファジーネーブル",
-                    ingredients: ["ピーチリキュール", "オレンジジュース"],
-                },
-                {
-                    name: "ペシェウーロン",
-                    ingredients: ["ピーチリキュール", "ウーロン茶"],
-                },
-
-                { name: "カンパリソーダ", ingredients: ["カンパリ", "ソーダ"] },
-                {
-                    name: "カンパリオレンジ",
-                    ingredients: ["カンパリ", "オレンジジュース"],
-                },
-                {
-                    name: "スプモーニ",
-                    ingredients: [
-                        "カンパリ",
-                        "オレンジジュース",
-                        "グレープフルーツ",
-                        "トニックウォーター",
-                    ],
-                },
-
-                {
-                    name: "シャンディガフ",
-                    ingredients: ["ビール", "ジンジャーエール"],
-                },
-                {
-                    name: "レッドアイ",
-                    ingredients: ["ビール", "トマトジュース"],
-                },
-                {
-                    name: "カシスビア",
-                    ingredients: ["ビール", "カシスリキュール"],
-                },
-
-                {
-                    name: "キール",
-                    ingredients: ["白ワイン", "カシスリキュール"],
-                },
-                { name: "スプリッツァー", ingredients: ["白ワイン", "ソーダ"] },
-                {
-                    name: "キールロワイヤル",
-                    ingredients: ["スパークリングワイン", "カシスリキュール"],
-                },
-                {
-                    name: "ミモザ",
-                    ingredients: ["スパークリングワイン", "オレンジジュース"],
-                },
-
-                {
-                    name: "カルーアミルク",
-                    ingredients: ["コーヒーリキュール", "ミルク"],
-                },
-                {
-                    name: "チャイナブルー",
-                    ingredients: [
-                        "ライチリキュール",
-                        "グレープフルーツジュース",
-                        "トニックウォーター",
-                    ],
-                },
-                {
-                    name: "照葉樹林",
-                    ingredients: ["グリーンティーリキュール", "ウーロン茶"],
-                },
-            ];
-
-            const modeEl = document.getElementById("mode");
-            const diffEl = document.getElementById("difficulty");
-            const questionEl = document.getElementById("question");
-            const hintEl = document.getElementById("hint");
-            const choicesEl = document.getElementById("choices");
-            const resultEl = document.getElementById("result");
-            const scoreEl = document.getElementById("score");
-            const totalEl = document.getElementById("total");
-            const qidEl = document.getElementById("qid");
-            const listEl = document.getElementById("list");
-            const ingsEl = document.getElementById("ings");
-
-            const allIngredients = Array.from(
-                new Set(COCKTAILS.flatMap((c) => c.ingredients))
-            ).sort((a, b) => a.localeCompare(b, "ja"));
-            listEl.textContent = COCKTAILS.map((c) => c.name).join("、");
-            ingsEl.textContent = allIngredients.join("、");
-
-            let state = {
-                current: null,
-                score: 0,
-                total: 0,
-                locked: false,
-            };
-
-            function shuffle(arr) {
-                const a = arr.slice();
-                for (let i = a.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [a[i], a[j]] = [a[j], a[i]];
-                }
-                return a;
-            }
-
-            function pickCocktail() {
-                if (diffEl.value === "easy") {
-                    const weighted = [];
-                    for (const c of COCKTAILS) {
-                        const w = Math.max(1, 5 - c.ingredients.length); // 材料が少ないほど出やすい
-                        for (let i = 0; i < w; i++) weighted.push(c);
-                    }
-                    return weighted[
-                        Math.floor(Math.random() * weighted.length)
-                    ];
-                }
-                return COCKTAILS[Math.floor(Math.random() * COCKTAILS.length)];
-            }
-
-            function clearResult() {
-                resultEl.className = "result";
-                resultEl.style.display = "none";
-                resultEl.innerHTML = "";
-            }
-
-            function setResult(ok, title, detail) {
-                resultEl.style.display = "block";
-                resultEl.className = "result " + (ok ? "ok" : "ng");
-                resultEl.innerHTML = `<div class="big">${title}</div><div class="small">${detail}</div>`;
-            }
-
-            function lockInputs() {
-                state.locked = true;
-                choicesEl
-                    .querySelectorAll(".choice")
-                    .forEach((c) => (c.style.pointerEvents = "none"));
-            }
-
-            function buildChoiceCard({ type, text, name, value }) {
-                // type: checkbox|radio（見た目用）
-                const card = document.createElement("div");
-                card.className = "choice";
-                card.dataset.type = type;
-                card.dataset.value = value;
-                card.setAttribute(
-                    "role",
-                    type === "radio" ? "radio" : "checkbox"
-                );
-                card.setAttribute("aria-checked", "false");
-
-                // hidden input keeps semantics for reading selection
-                const input = document.createElement("input");
-                input.type = type;
-                input.name = name;
-                input.value = value;
-
-                const mark = document.createElement("div");
-                mark.className = "mark";
-
-                const label = document.createElement("div");
-                label.className = "label";
-                label.innerHTML = `<div class="title">${text}</div><div class="sub">${
-                    type === "radio" ? "カクテル名" : "材料"
-                }</div>`;
-
-                card.appendChild(input);
-                card.appendChild(mark);
-                card.appendChild(label);
-
-                card.addEventListener("click", () => {
-                    if (state.locked) return;
-
-                    if (type === "radio") {
-                        // 既存の選択解除
-                        choicesEl.querySelectorAll(".choice").forEach((el) => {
-                            el.classList.remove("selected");
-                            el.setAttribute("aria-checked", "false");
-                            const inp = el.querySelector("input");
-                            inp.checked = false;
-                        });
-                        card.classList.add("selected");
-                        card.setAttribute("aria-checked", "true");
-                        input.checked = true;
-                    } else {
-                        // checkbox toggle
-                        const next = !input.checked;
-                        input.checked = next;
-                        card.classList.toggle("selected", next);
-                        card.setAttribute(
-                            "aria-checked",
-                            next ? "true" : "false"
-                        );
-                    }
-                });
-
-                return card;
-            }
-
-            function renderQuestion() {
-                state.locked = false;
-                clearResult();
-
-                const cocktail = pickCocktail();
-                const qid = Math.random().toString(16).slice(2, 8);
-                qidEl.textContent = qid;
-
-                const mode = modeEl.value;
-
-                if (mode === "nameToIng") {
-                    const correct = new Set(cocktail.ingredients);
-                    const wrongPool = allIngredients.filter(
-                        (x) => !correct.has(x)
-                    );
-                    const wrongCount = Math.min(6, wrongPool.length);
-                    const options = shuffle([
-                        ...cocktail.ingredients,
-                        ...shuffle(wrongPool).slice(0, wrongCount),
-                    ]);
-
-                    state.current = {
-                        type: "nameToIng",
-                        cocktail,
-                        correctSet: correct,
-                        options,
-                    };
-
-                    questionEl.textContent = `「${cocktail.name}」の材料を選びなさい`;
-                    hintEl.textContent =
-                        "複数選択OK。正しい材料を全部選んで「判定」。";
-
-                    choicesEl.innerHTML = "";
-                    options.forEach((opt) => {
-                        choicesEl.appendChild(
-                            buildChoiceCard({
-                                type: "checkbox",
-                                text: opt,
-                                name: "ing",
-                                value: opt,
-                            })
-                        );
-                    });
-                } else {
-                    const ingText = shuffle(cocktail.ingredients).join(" + ");
-                    const correctName = cocktail.name;
-                    const wrongNames = shuffle(
-                        COCKTAILS.filter((c) => c.name !== correctName).map(
-                            (c) => c.name
-                        )
-                    ).slice(0, 3);
-                    const options = shuffle([correctName, ...wrongNames]);
-
-                    state.current = {
-                        type: "ingToName",
-                        cocktail,
-                        ingText,
-                        correctName,
-                        options,
-                    };
-
-                    questionEl.textContent = `材料「${ingText}」のカクテル名を選びなさい`;
-                    hintEl.textContent = "1つ選択して「判定」。";
-
-                    choicesEl.innerHTML = "";
-                    options.forEach((opt) => {
-                        choicesEl.appendChild(
-                            buildChoiceCard({
-                                type: "radio",
-                                text: opt,
-                                name: "name",
-                                value: opt,
-                            })
-                        );
-                    });
-                }
-            }
-
-            function getSelected() {
-                if (!state.current) return [];
-                if (state.current.type === "nameToIng") {
-                    return Array.from(
-                        document.querySelectorAll('input[name="ing"]:checked')
-                    ).map((x) => x.value);
-                }
-                const r = document.querySelector('input[name="name"]:checked');
-                return r ? [r.value] : [];
-            }
-
-            function checkAnswer() {
-                if (!state.current || state.locked) return;
-
-                const selected = getSelected();
-                if (selected.length === 0) {
-                    setResult(
-                        false,
-                        "未選択です",
-                        "どれか選んでから判定してください。"
-                    );
-                    return;
-                }
-
-                state.total += 1;
-                totalEl.textContent = state.total;
-
-                if (state.current.type === "nameToIng") {
-                    const correct = state.current.correctSet;
-                    const selSet = new Set(selected);
-                    let ok = true;
-
-                    for (const c of correct) {
-                        if (!selSet.has(c)) ok = false;
-                    }
-                    for (const s of selSet) {
-                        if (!correct.has(s)) ok = false;
-                    }
-
-                    if (ok) {
-                        state.score += 1;
-                        scoreEl.textContent = state.score;
-                        setResult(
-                            true,
-                            "正解！",
-                            "選んだ材料がすべて一致しました。"
-                        );
-                    } else {
-                        setResult(
-                            false,
-                            "不正解",
-                            `正解：${state.current.cocktail.ingredients.join(
-                                " + "
-                            )}`
-                        );
-                    }
-                    lockInputs();
-                } else {
-                    const ans = state.current.correctName;
-                    const ok = selected[0] === ans;
-                    if (ok) {
-                        state.score += 1;
-                        scoreEl.textContent = state.score;
-                        setResult(
-                            true,
-                            "正解！",
-                            "その組み合わせのカクテル名で合っています。"
-                        );
-                    } else {
-                        setResult(false, "不正解", `正解：${ans}`);
-                    }
-                    lockInputs();
-                }
-            }
-
-            function revealAnswer() {
-                if (!state.current) return;
-                if (state.current.type === "nameToIng") {
-                    setResult(
-                        true,
-                        "答え",
-                        `${
-                            state.current.cocktail.name
-                        } = ${state.current.cocktail.ingredients.join(" + ")}`
-                    );
-                } else {
-                    setResult(
-                        true,
-                        "答え",
-                        `${state.current.ingText} = ${state.current.correctName}`
-                    );
-                }
-            }
-
-            document
-                .getElementById("newQ")
-                .addEventListener("click", renderQuestion);
-            document
-                .getElementById("check")
-                .addEventListener("click", checkAnswer);
-            document
-                .getElementById("reveal")
-                .addEventListener("click", revealAnswer);
-
-            // モード/難易度変更で即出題し直し
-            modeEl.addEventListener("change", renderQuestion);
-            diffEl.addEventListener("change", renderQuestion);
-
-            // 初回は自動で1問出す（スマホで手数を減らす）
-            renderQuestion();
-        </script>
-    </body>
+document.getElementById("newQ").addEventListener("click", renderQuestion);
+document.getElementById("check").addEventListener("click", checkAnswer);
+document.getElementById("reveal").addEventListener("click", revealAnswer);
+modeEl.addEventListener("change", renderQuestion);
+diffEl.addEventListener("change", renderQuestion);
+
+/* 初回は自動で1問出す（スマホで手数を減らす） */
+renderQuestion();
+</script>
+</body>
 </html>
